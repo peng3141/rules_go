@@ -41,7 +41,7 @@ func nogo(args []string) error {
 	fs.StringVar(&outFactsPath, "out_facts", "", "The file to emit serialized nogo facts to")
 	fs.StringVar(&outLogPath, "out_log", "", "The file to emit nogo logs into")
 
-	fs.StringVar(&nogoFixPath, "fixpath", "", "The fix path")
+	fs.StringVar(&nogoFixPath, "fixpath", "", "The path of the file that stores the nogo fixes")
 
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -106,9 +106,6 @@ func runNogo(workDir string, nogoPath string, srcs, ignores []string, facts []ar
 	args := []string{nogoPath}
 	args = append(args, "-p", packagePath)
 	args = append(args, "-fixpath", nogoFixPath)
-
-
-	// args = append(args, "-json")
 	args = append(args, "-importcfg", importcfgPath)
 	for _, fact := range facts {
 		args = append(args, "-fact", fmt.Sprintf("%s=%s", fact.importPath, fact.file))

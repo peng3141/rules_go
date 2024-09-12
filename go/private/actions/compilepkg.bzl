@@ -90,6 +90,7 @@ def emit_compilepkg(
         fail("nogo must be specified if and only if out_nogo_validation is specified")
     if bool(nogo) != bool(out_nogo_fix):
         fail("nogo must be specified if and only if out_nogo_fix is specified")
+
     if cover and go.coverdata:
         archives = archives + [go.coverdata]
 

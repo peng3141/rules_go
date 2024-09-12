@@ -1,10 +1,11 @@
 package main
 
+
 import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	// "log"
+	"os"
 )
 
 // SaveToFile saves the Change struct to a JSON file.
@@ -14,9 +15,9 @@ func SaveToFile(filename string, change Change) error {
 	if err != nil {
 		return fmt.Errorf("error serializing to JSON: %v", err)
 	}
-	// log.Fatalf("!!!!: %v", change)
+
 	// Write the JSON data to the file
-	err = ioutil.WriteFile(filename, jsonData, 0644)
+	err = os.WriteFile(filename, jsonData, 0644)
 	if err != nil {
 		return fmt.Errorf("error writing to file: %v", err)
 	}
