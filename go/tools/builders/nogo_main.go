@@ -68,7 +68,7 @@ func main() {
 func run(args []string) (error, int) {
 	args, _, err := expandParamsFiles(args)
 	if err != nil {
-		return fmt.Errorf("error reading paramfiles: %v", err), nogoError
+		return fmt.Errorf("hi error reading paramfiles: %v", err), nogoError
 	}
 
 	factMap := factMultiFlag{}
