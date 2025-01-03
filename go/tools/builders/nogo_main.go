@@ -133,7 +133,7 @@ func saveSuggestedFixes(nogoFixPath string, diagnostics []diagnosticEntry, pkg *
 	}
 	var errs []error
 	// the patch file has to be created even if there is no fix.
-	patchFile, err := os.Create(nogoFixPath)
+	patchFile, err := os.OpenFile(nogoFixPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)  // os.Create(nogoFixPath)
 	if err != nil {
 		errs = append(errs, fmt.Errorf("creating %q: %w", nogoFixPath, err))
 		return errs
