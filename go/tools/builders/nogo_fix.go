@@ -83,6 +83,17 @@ func applyEdits(src []byte, edits []nogoEdit) []byte {
 // getFixes merges the suggested fixes from all analyzers, returns one fileChange object per file,
 // while reporting conflicts as error.
 func getFixes(entries []diagnosticEntry, fileSet *token.FileSet) ([]fileChange, error) {
+	hasFixes := false
+	for _, entry := range entries {
+		if len(entry.Diagnostic.SuggestedFixes) > 0 {
+			hasFixes = true
+		}
+	}
+	if !hasFixes {
+		// there is no error in terms of getting the fixes, so we don't report an error.
+		return nil, nil
+	}
+
 	var allErrors []error
 	finalChanges := make(map[string][]nogoEdit)
 
@@ -94,6 +105,7 @@ func getFixes(entries []diagnosticEntry, fileSet *token.FileSet) ([]fileChange, 
 		// none of the suggested fixes of a diagnostic can be applied, the diagnostic entry will be skipped
 		// with an error message to the user.
 		foundApplicableFix := false
+		var perAnalyzerErrors []error
 		for _, sf := range entry.Diagnostic.SuggestedFixes {
 			candidateChanges := make(map[string][]nogoEdit)
 			applicable := true
@@ -124,8 +136,11 @@ func getFixes(entries []diagnosticEntry, fileSet *token.FileSet) ([]fileChange, 
 			for fileName, edits := range candidateChanges {
 				edits = append(edits, finalChanges[fileName]...)
 				var err error
+
 				if candidateChanges[fileName], err = validate(edits); err != nil {
 					applicable = false
+					// record the reason why this suggested fix is not applicable.
+					perAnalyzerErrors = append(perAnalyzerErrors, err)
 					break
 				}
 			}
@@ -140,8 +155,9 @@ func getFixes(entries []diagnosticEntry, fileSet *token.FileSet) ([]fileChange, 
 		}
 		if !foundApplicableFix {
 			allErrors = append(allErrors, fmt.Errorf(
-				"ignoring suggested fixes from analyzer %q at %s",
+				"ignoring suggested fixes from analyzer %q at %s. details about errors on each of the suggested fixes: %+v",
 				entry.analyzerName, fileSet.Position(entry.Pos),
+				perAnalyzerErrors,
 			))
 		}
 	}
@@ -156,12 +172,12 @@ func getFixes(entries []diagnosticEntry, fileSet *token.FileSet) ([]fileChange, 
 	}
 
 	var errMsg bytes.Buffer
-	errMsg.WriteString("some suggested fixes are invalid or have conflicts with other fixes:")
+	errMsg.WriteString("errors in reconciling the suggested fixes: ")
 	for _, e := range allErrors {
 		errMsg.WriteString("\n\t")
 		errMsg.WriteString(e.Error())
 	}
-	errMsg.WriteString("\nplease apply other fixes and rerun the build.")
+	errMsg.WriteString("\nit is possible that the fixes overlap with each other, please apply the selected fixes, rerun the build and try again to fix the rest.")
 	return finalFileChanges, errors.New(errMsg.String())
 }
 
@@ -236,3 +252,4 @@ func writePatch(patchFile io.Writer, changes []fileChange) error {
 
 	return nil
 }
+
