@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/pmezard/go-difflib/difflib"
 	"golang.org/x/tools/go/analysis"
@@ -87,6 +88,7 @@ func getFixes(entries []diagnosticEntry, fileSet *token.FileSet) ([]fileChange, 
 	for _, entry := range entries {
 		if len(entry.Diagnostic.SuggestedFixes) > 0 {
 			hasFixes = true
+			break
 		}
 	}
 	if !hasFixes {
@@ -155,9 +157,9 @@ func getFixes(entries []diagnosticEntry, fileSet *token.FileSet) ([]fileChange, 
 		}
 		if !foundApplicableFix {
 			allErrors = append(allErrors, fmt.Errorf(
-				"ignoring suggested fixes from analyzer %q at %s. details about errors on each of the suggested fixes: %+v",
+				"ignoring suggested fixes from analyzer %q at %s because:\n\t%s",
 				entry.analyzerName, fileSet.Position(entry.Pos),
-				perAnalyzerErrors,
+				strings.Join(formatErrors(perAnalyzerErrors), "\n\t"),
 			))
 		}
 	}
@@ -172,12 +174,10 @@ func getFixes(entries []diagnosticEntry, fileSet *token.FileSet) ([]fileChange, 
 	}
 
 	var errMsg bytes.Buffer
-	errMsg.WriteString("errors in reconciling the suggested fixes: ")
 	for _, e := range allErrors {
 		errMsg.WriteString("\n\t")
 		errMsg.WriteString(e.Error())
 	}
-	errMsg.WriteString("\nit is possible that the fixes overlap with each other, please apply the selected fixes, rerun the build and try again to fix the rest.")
 	return finalFileChanges, errors.New(errMsg.String())
 }
 
@@ -253,3 +253,10 @@ func writePatch(patchFile io.Writer, changes []fileChange) error {
 	return nil
 }
 
+func formatErrors(errs []error) []string {
+	result := make([]string, len(errs))
+	for i, err := range errs {
+		result[i] = fmt.Sprintf("- %v", err)
+	}
+	return result
+}

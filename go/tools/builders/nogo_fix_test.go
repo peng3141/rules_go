@@ -177,7 +177,8 @@ func TestGetFixes_Conflict(t *testing.T) {
 		},
 	}
 	expectedError := `ignoring suggested fixes from analyzer "analyzer2"`
-	detailedExpectedError := `details about errors on each of the suggested fixes: [overlapping suggestions from "analyzer2" and "analyzer1" at {Start:54,End:61,New:""} and {Start:54,End:62,New:""}]`
+	detailedExpectedError := `because:
+	- overlapping suggestions from "analyzer2" and "analyzer1" at {Start:54,End:61,New:""} and {Start:54,End:62,New:""}`
 
 	fileChanges, err := getFixes(diagnosticEntries, fset)
 	if err == nil || !strings.Contains(err.Error(), expectedError) || !strings.Contains(err.Error(), detailedExpectedError) {
