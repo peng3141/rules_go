@@ -84,22 +84,13 @@ func applyEdits(src []byte, edits []nogoEdit) []byte {
 // getFixes merges the suggested fixes from all analyzers, returns one fileChange object per file,
 // while reporting conflicts as error.
 func getFixes(entries []diagnosticEntry, fileSet *token.FileSet) ([]fileChange, error) {
-	hasFixes := false
-	for _, entry := range entries {
-		if len(entry.Diagnostic.SuggestedFixes) > 0 {
-			hasFixes = true
-			break
-		}
-	}
-	if !hasFixes {
-		// there is no error in terms of getting the fixes, so we don't report an error.
-		return nil, nil
-	}
-
 	var allErrors []error
 	finalChanges := make(map[string][]nogoEdit)
 
 	for _, entry := range entries {
+		if len(entry.Diagnostic.SuggestedFixes) == 0 {
+			continue
+		}
 		// According to the [doc](https://pkg.go.dev/golang.org/x/tools@v0.28.0/go/analysis#Diagnostic),
 		// an analyzer may suggest several alternative fixes, but only one should be applied.
 		// We will go over all the suggested fixes until the we find one with no conflict
